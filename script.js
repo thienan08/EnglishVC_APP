@@ -60,6 +60,31 @@ function setupEventListeners() {
         if (e.target.id === 'addDayModal') closeModal();
     });
     
+    // Edit day modal
+    document.getElementById('cancelEditDayBtn').addEventListener('click', closeEditDayModal);
+    document.getElementById('confirmEditDayBtn').addEventListener('click', confirmEditDay);
+    document.querySelector('.modal-close-edit-day').addEventListener('click', closeEditDayModal);
+    document.getElementById('editDayModal').addEventListener('click', (e) => {
+        if (e.target.id === 'editDayModal') closeEditDayModal();
+    });
+    document.getElementById('editDayNameInput').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') confirmEditDay();
+    });
+    
+    // Edit vocab modal
+    document.getElementById('cancelEditVocabBtn').addEventListener('click', closeEditVocabModal);
+    document.getElementById('confirmEditVocabBtn').addEventListener('click', confirmEditVocab);
+    document.querySelector('.modal-close-edit-vocab').addEventListener('click', closeEditVocabModal);
+    document.getElementById('editVocabModal').addEventListener('click', (e) => {
+        if (e.target.id === 'editVocabModal') closeEditVocabModal();
+    });
+    document.getElementById('editEnglishInput').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') document.getElementById('editVietnameseInput').focus();
+    });
+    document.getElementById('editVietnameseInput').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') confirmEditVocab();
+    });
+    
     // Vocabulary management
     document.getElementById('backToList').addEventListener('click', showDayList);
     document.getElementById('addVocabBtn').addEventListener('click', addVocabulary);
@@ -191,6 +216,7 @@ function createDayCard(day, index) {
         <div class="day-card-header">
             <h3>${day.name}</h3>
             <div class="day-card-actions">
+                <button class="btn-small edit-day" data-id="${day.id}" title="Chỉnh sửa">✏️</button>
                 <button class="btn-small delete-day" data-id="${day.id}" title="Xóa">🗑️</button>
             </div>
         </div>
@@ -201,9 +227,15 @@ function createDayCard(day, index) {
     
     // Click to open
     card.addEventListener('click', (e) => {
-        if (!e.target.classList.contains('delete-day')) {
+        if (!e.target.classList.contains('delete-day') && !e.target.classList.contains('edit-day')) {
             openDay(day.id);
         }
+    });
+    
+    // Edit button
+    card.querySelector('.edit-day').addEventListener('click', (e) => {
+        e.stopPropagation();
+        editDayName(day.id);
     });
     
     // Delete button
@@ -260,6 +292,46 @@ function deleteDay(dayId) {
     saveData(data);
     
     loadDays();
+}
+
+// Edit day name
+let editingDayId = null;
+
+function editDayName(dayId) {
+    const data = getData();
+    const day = data.days.find(d => d.id === dayId);
+    
+    editingDayId = dayId;
+    document.getElementById('editDayNameInput').value = day.name;
+    document.getElementById('editDayModal').classList.add('active');
+    document.getElementById('editDayNameInput').focus();
+}
+
+function closeEditDayModal() {
+    document.getElementById('editDayModal').classList.remove('active');
+    editingDayId = null;
+}
+
+function confirmEditDay() {
+    const newName = document.getElementById('editDayNameInput').value.trim();
+    
+    if (!newName) {
+        alert('Vui lòng nhập tên ngày!');
+        return;
+    }
+    
+    const data = getData();
+    const day = data.days.find(d => d.id === editingDayId);
+    day.name = newName;
+    saveData(data);
+    
+    closeEditDayModal();
+    loadDays();
+    
+    // Update title if currently viewing this day
+    if (currentDayId === editingDayId) {
+        document.getElementById('currentDayTitle').textContent = day.name;
+    }
 }
 
 // Open day
@@ -338,8 +410,19 @@ function createVocabItem(vocab, index) {
     deleteBtn.textContent = '🗑️';
     deleteBtn.addEventListener('click', () => deleteVocabulary(vocab.id));
     
+    const editBtn = document.createElement('button');
+    editBtn.className = 'btn-small edit-vocab';
+    editBtn.title = 'Chỉnh sửa';
+    editBtn.textContent = '✏️';
+    editBtn.addEventListener('click', () => editVocabulary(vocab.id));
+    
+    const actionBtns = document.createElement('div');
+    actionBtns.className = 'vocab-actions';
+    actionBtns.appendChild(editBtn);
+    actionBtns.appendChild(deleteBtn);
+    
     item.appendChild(content);
-    item.appendChild(deleteBtn);
+    item.appendChild(actionBtns);
     
     return item;
 }
@@ -390,6 +473,47 @@ function deleteVocabulary(vocabId) {
     loadVocabulary();
 }
 
+// Edit vocabulary
+let editingVocabId = null;
+
+function editVocabulary(vocabId) {
+    const data = getData();
+    const day = data.days.find(d => d.id === currentDayId);
+    const vocab = day.vocabulary.find(v => v.id === vocabId);
+    
+    editingVocabId = vocabId;
+    document.getElementById('editEnglishInput').value = vocab.english;
+    document.getElementById('editVietnameseInput').value = vocab.vietnamese;
+    document.getElementById('editVocabModal').classList.add('active');
+    document.getElementById('editEnglishInput').focus();
+}
+
+function closeEditVocabModal() {
+    document.getElementById('editVocabModal').classList.remove('active');
+    editingVocabId = null;
+}
+
+function confirmEditVocab() {
+    const newEnglish = document.getElementById('editEnglishInput').value.trim();
+    const newVietnamese = document.getElementById('editVietnameseInput').value.trim();
+    
+    if (!newEnglish || !newVietnamese) {
+        alert('Vui lòng nhập đầy đủ cả tiếng Anh và tiếng Việt!');
+        return;
+    }
+    
+    const data = getData();
+    const day = data.days.find(d => d.id === currentDayId);
+    const vocab = day.vocabulary.find(v => v.id === editingVocabId);
+    
+    vocab.english = newEnglish;
+    vocab.vietnamese = newVietnamese;
+    saveData(data);
+    
+    closeEditVocabModal();
+    loadVocabulary();
+}
+
 // Open test selection
 function openTestSelection() {
     const day = getCurrentDay();
@@ -411,6 +535,11 @@ function openTestSelection() {
         test2: { correct: [], wrong: [] },
         test3: { correct: [], wrong: [] }
     };
+    
+    // Calculate and display estimated matching rounds
+    const estimatedRounds = Math.ceil((day.vocabulary.length * 3) / 5);
+    const infoText = `💡 Hoàn thành cả 3 test để xem kết quả tổng hợp! Test 3 sẽ có khoảng ${estimatedRounds} vòng (mỗi từ xuất hiện 3 lần).`;
+    document.querySelector('.test-selection-info p').textContent = infoText;
     
     // Update UI to show which tests are completed
     updateTestSelection();
@@ -502,12 +631,13 @@ function loadTypingQuestion() {
     
     document.getElementById('typingAnswerInput').value = '';
     document.getElementById('typingAnswerInput').disabled = false;
+    document.getElementById('typingAnswerInput').classList.remove('correct-answer', 'close-answer');
     document.getElementById('nextTypingWordBtn').disabled = true;
     document.getElementById('showTypingAnswerBtn').disabled = false;
     
     // Hide feedback and answer
     const feedback = document.getElementById('typingFeedbackMessage');
-    feedback.classList.remove('show', 'correct', 'wrong');
+    feedback.classList.remove('show', 'correct', 'wrong', 'hint');
     
     const answerDisplay = document.getElementById('typingAnswerDisplay');
     answerDisplay.classList.remove('show');
@@ -518,13 +648,17 @@ function loadTypingQuestion() {
 
 function checkTypingAnswer() {
     const input = document.getElementById('typingAnswerInput');
-    const userAnswer = input.value.trim().toLowerCase();
+    const userAnswer = normalizeAnswer(input.value);
     const word = typingTestWords[currentTypingIndex];
     const correctAnswer = currentTestType === 1 
-        ? word.english.toLowerCase() 
-        : word.vietnamese.toLowerCase();
+        ? normalizeAnswer(word.english) 
+        : normalizeAnswer(word.vietnamese);
+    
+    // Remove previous classes
+    input.classList.remove('correct-answer', 'close-answer');
     
     if (userAnswer === correctAnswer) {
+        input.classList.add('correct-answer');
         showTypingFeedback(true);
         document.getElementById('nextTypingWordBtn').disabled = false;
         input.disabled = true;
@@ -535,18 +669,76 @@ function checkTypingAnswer() {
             allTestsResults[testKey].correct.push(word);
         }
     } else if (userAnswer !== '') {
-        // Only show wrong feedback if there's input
-        if (userAnswer.length >= correctAnswer.length) {
+        // Show feedback based on similarity
+        const similarity = calculateSimilarity(userAnswer, correctAnswer);
+        
+        // If very close (90%+), show a hint
+        if (similarity > 0.9 && userAnswer.length >= correctAnswer.length * 0.8) {
+            input.classList.add('close-answer');
+            showTypingFeedback(false, '⚠️ Gần đúng rồi! Kiểm tra lại chính tả');
+        } else if (userAnswer.length >= correctAnswer.length) {
             showTypingFeedback(false);
         }
     }
 }
 
-function showTypingFeedback(isCorrect) {
+// Calculate similarity between two strings (0 to 1)
+function calculateSimilarity(str1, str2) {
+    const longer = str1.length > str2.length ? str1 : str2;
+    const shorter = str1.length > str2.length ? str2 : str1;
+    
+    if (longer.length === 0) return 1.0;
+    
+    const editDistance = getEditDistance(longer, shorter);
+    return (longer.length - editDistance) / longer.length;
+}
+
+// Calculate edit distance (Levenshtein distance)
+function getEditDistance(str1, str2) {
+    const matrix = [];
+    
+    for (let i = 0; i <= str2.length; i++) {
+        matrix[i] = [i];
+    }
+    
+    for (let j = 0; j <= str1.length; j++) {
+        matrix[0][j] = j;
+    }
+    
+    for (let i = 1; i <= str2.length; i++) {
+        for (let j = 1; j <= str1.length; j++) {
+            if (str2.charAt(i - 1) === str1.charAt(j - 1)) {
+                matrix[i][j] = matrix[i - 1][j - 1];
+            } else {
+                matrix[i][j] = Math.min(
+                    matrix[i - 1][j - 1] + 1,
+                    matrix[i][j - 1] + 1,
+                    matrix[i - 1][j] + 1
+                );
+            }
+        }
+    }
+    
+    return matrix[str2.length][str1.length];
+}
+
+// Normalize answer: trim, lowercase, and remove extra spaces
+function normalizeAnswer(text) {
+    return text.trim().toLowerCase().replace(/\s+/g, ' ');
+}
+
+function showTypingFeedback(isCorrect, customMessage = null) {
     const feedback = document.getElementById('typingFeedbackMessage');
-    feedback.classList.remove('correct', 'wrong');
-    feedback.classList.add(isCorrect ? 'correct' : 'wrong');
-    feedback.textContent = isCorrect ? '✓ Chính xác!' : '✗ Sai rồi!';
+    feedback.classList.remove('correct', 'wrong', 'hint');
+    
+    if (customMessage) {
+        feedback.classList.add('hint');
+        feedback.textContent = customMessage;
+    } else {
+        feedback.classList.add(isCorrect ? 'correct' : 'wrong');
+        feedback.textContent = isCorrect ? '✓ Chính xác!' : '✗ Sai rồi!';
+    }
+    
     feedback.classList.add('show');
 }
 
@@ -600,23 +792,69 @@ function completeTypingTest() {
 
 function startMatchingTest() {
     const day = getCurrentDay();
+    const allWords = [...day.vocabulary];
     
-    // Shuffle vocabulary
-    const shuffled = [...day.vocabulary].sort(() => Math.random() - 0.5);
-    
-    // Create 5 rounds of 5 words each
+    // Create rounds ensuring each word appears exactly 3 times total
+    // and no word appears twice in the same round
     matchingRounds = [];
-    for (let i = 0; i < 5; i++) {
-        const startIdx = i * 5;
-        const roundWords = shuffled.slice(startIdx, startIdx + 5);
+    const wordAppearances = new Map(); // Track how many times each word has appeared
+    
+    // Initialize appearance counter
+    allWords.forEach(word => {
+        wordAppearances.set(word.id, 0);
+    });
+    
+    // Calculate total number of rounds needed
+    const totalAppearances = allWords.length * 3; // Each word appears 3 times
+    const totalRounds = Math.ceil(totalAppearances / 5);
+    
+    // Create rounds
+    for (let roundIndex = 0; roundIndex < totalRounds; roundIndex++) {
+        const roundWords = [];
+        const usedInThisRound = new Set();
         
-        // If not enough words, reuse from beginning
-        while (roundWords.length < 5) {
-            roundWords.push(shuffled[roundWords.length % shuffled.length]);
+        // Try to fill the round with 5 different words
+        let attempts = 0;
+        while (roundWords.length < 5 && attempts < 100) {
+            attempts++;
+            
+            // Get words that still need more appearances and haven't been used in this round
+            const availableWords = allWords.filter(word => 
+                wordAppearances.get(word.id) < 3 && 
+                !usedInThisRound.has(word.id)
+            );
+            
+            if (availableWords.length === 0) {
+                // If no words need more appearances, we're done
+                break;
+            }
+            
+            // Pick a random word from available words
+            const randomIndex = Math.floor(Math.random() * availableWords.length);
+            const selectedWord = availableWords[randomIndex];
+            
+            roundWords.push(selectedWord);
+            usedInThisRound.add(selectedWord.id);
+            wordAppearances.set(selectedWord.id, wordAppearances.get(selectedWord.id) + 1);
         }
         
-        matchingRounds.push(roundWords);
+        // Only add rounds that have at least 3 words (to avoid too small rounds)
+        if (roundWords.length >= 3) {
+            // If less than 5 words, fill with random words that already appeared enough times
+            while (roundWords.length < 5) {
+                const fillerWord = allWords[Math.floor(Math.random() * allWords.length)];
+                if (!usedInThisRound.has(fillerWord.id)) {
+                    roundWords.push(fillerWord);
+                    usedInThisRound.add(fillerWord.id);
+                }
+            }
+            
+            matchingRounds.push(roundWords);
+        }
     }
+    
+    // Shuffle the order of rounds
+    shuffleArray(matchingRounds);
     
     currentMatchingRound = 0;
     selectedEnglish = null;
@@ -626,8 +864,17 @@ function startMatchingTest() {
     loadMatchingRound();
 }
 
+// Shuffle array using Fisher-Yates algorithm
+function shuffleArray(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+}
+
 function loadMatchingRound() {
-    if (currentMatchingRound >= 5) {
+    if (currentMatchingRound >= matchingRounds.length) {
         completeMatchingTest();
         return;
     }
@@ -640,7 +887,7 @@ function loadMatchingRound() {
     
     // Update progress
     document.getElementById('currentMatchingRound').textContent = currentMatchingRound + 1;
-    document.getElementById('totalMatchingRounds').textContent = 5;
+    document.getElementById('totalMatchingRounds').textContent = matchingRounds.length;
     
     // Clear feedback
     document.getElementById('matchingFeedback').textContent = '';
