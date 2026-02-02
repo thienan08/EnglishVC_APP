@@ -438,6 +438,11 @@ body {
     box-shadow: 0 4px 12px var(--shadow-lg);
 }
 
+.vocab-actions {
+    display: flex;
+    gap: var(--spacing-xs);
+}
+
 .vocab-content {
     display: flex;
     gap: var(--spacing-xl);
@@ -600,6 +605,16 @@ body {
     transform: scale(1.02);
 }
 
+.test-input.correct-answer {
+    border-color: var(--success);
+    box-shadow: 0 0 0 4px rgba(81, 207, 102, 0.2);
+}
+
+.test-input.close-answer {
+    border-color: var(--warning);
+    box-shadow: 0 0 0 4px rgba(255, 212, 59, 0.2);
+}
+
 .feedback-message {
     margin-top: var(--spacing-md);
     padding: var(--spacing-md);
@@ -625,6 +640,11 @@ body {
 .feedback-message.wrong {
     background: rgba(255, 107, 107, 0.2);
     color: var(--error);
+}
+
+.feedback-message.hint {
+    background: rgba(255, 212, 59, 0.2);
+    color: var(--warning);
 }
 
 .test-actions {
