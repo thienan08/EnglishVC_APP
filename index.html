@@ -290,6 +290,41 @@
         </div>
     </div>
 
+    <!-- Modal: Chỉnh sửa tên ngày -->
+    <div id="editDayModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Chỉnh Sửa Tên Ngày</h3>
+                <button class="modal-close-edit-day">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="text" id="editDayNameInput" placeholder="Tên ngày mới" class="input-field">
+            </div>
+            <div class="modal-footer">
+                <button id="cancelEditDayBtn" class="btn btn-secondary">Hủy</button>
+                <button id="confirmEditDayBtn" class="btn btn-primary">Lưu</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Chỉnh sửa từ vựng -->
+    <div id="editVocabModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Chỉnh Sửa Từ Vựng</h3>
+                <button class="modal-close-edit-vocab">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="text" id="editEnglishInput" placeholder="Tiếng Anh" class="input-field" style="margin-bottom: var(--spacing-md);">
+                <input type="text" id="editVietnameseInput" placeholder="Tiếng Việt" class="input-field">
+            </div>
+            <div class="modal-footer">
+                <button id="cancelEditVocabBtn" class="btn btn-secondary">Hủy</button>
+                <button id="confirmEditVocabBtn" class="btn btn-primary">Lưu</button>
+            </div>
+        </div>
+    </div>
+
     <script src="script.js"></script>
 </body>
 </html>
