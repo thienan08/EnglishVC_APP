@@ -477,6 +477,12 @@ body {
     gap: var(--spacing-sm);
 }
 
+.pronunciation-container {
+    display: inline-flex;
+    gap: 4px;
+    align-items: center;
+}
+
 .btn-pronunciation {
     padding: var(--spacing-xs) var(--spacing-sm);
     background: var(--gradient-primary);
@@ -492,9 +498,41 @@ body {
     text-decoration: none;
 }
 
+.btn-pronunciation-us {
+    background: linear-gradient(135deg, #4285f4 0%, #3367d6 100%);
+}
+
+.btn-pronunciation-uk {
+    background: linear-gradient(135deg, #dc143c 0%, #b22222 100%);
+}
+
+.btn-pronunciation-dict {
+    background: linear-gradient(135deg, #9333ea 0%, #7e22ce 100%);
+}
+
 .btn-pronunciation:hover {
-    transform: scale(1.1);
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    transform: scale(1.15);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.btn-pronunciation:active {
+    transform: scale(0.95);
+}
+
+.btn-pronunciation.speaking {
+    animation: speaking-pulse 0.8s ease-in-out infinite;
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+}
+
+@keyframes speaking-pulse {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.15);
+        opacity: 0.9;
+    }
 }
 
 /* Test View */
@@ -551,12 +589,22 @@ body {
 
 .pronunciation-btn-container {
     margin-top: var(--spacing-md);
+    display: flex;
+    gap: var(--spacing-sm);
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.pronunciation-btn-container .pronunciation-container {
+    gap: var(--spacing-sm);
 }
 
 .pronunciation-btn-container .btn-pronunciation {
     background: rgba(255, 255, 255, 0.2);
     backdrop-filter: blur(10px);
     border: 2px solid rgba(255, 255, 255, 0.3);
+    padding: var(--spacing-sm) var(--spacing-md);
+    font-size: 0.9rem;
 }
 
 .pronunciation-btn-container .btn-pronunciation:hover {
@@ -842,9 +890,13 @@ body {
     flex: 1;
 }
 
+.wrong-word-item .pronunciation-container {
+    gap: 4px;
+}
+
 .wrong-word-item .btn-pronunciation {
     font-size: 0.75rem;
-    padding: 4px 8px;
+    padding: 4px 6px;
 }
 
 .wrong-word-item .vietnamese {
@@ -1152,18 +1204,22 @@ body {
     position: relative;
 }
 
-.matching-word .btn-pronunciation {
-    padding: 4px 8px;
-    font-size: 0.75rem;
+.matching-word .pronunciation-container {
     position: absolute;
     right: 8px;
     top: 50%;
     transform: translateY(-50%);
     z-index: 10;
+    gap: 2px;
 }
 
-.matching-word.matched .btn-pronunciation,
-.matching-word.wrong .btn-pronunciation {
+.matching-word .btn-pronunciation {
+    padding: 4px 6px;
+    font-size: 0.7rem;
+}
+
+.matching-word.matched .pronunciation-container,
+.matching-word.wrong .pronunciation-container {
     pointer-events: none;
     opacity: 0.5;
 }
@@ -1386,5 +1442,16 @@ body {
     
     .breakdown-grid {
         grid-template-columns: 1fr;
+    }
+    
+    .pronunciation-container {
+        flex-wrap: wrap;
+    }
+    
+    .matching-word .pronunciation-container {
+        position: static;
+        transform: none;
+        margin-top: var(--spacing-xs);
+        justify-content: center;
     }
 }
