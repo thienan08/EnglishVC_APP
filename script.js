@@ -180,23 +180,23 @@ function createPronunciationButton(word, showText = false) {
     // US pronunciation button
     const btnUS = document.createElement('button');
     btnUS.className = 'btn-pronunciation btn-pronunciation-us';
-    btnUS.title = 'Phát âm US';
+    btnUS.title = 'Phát âm US (Mỹ)';
     btnUS.innerHTML = showText ? '🔊 US' : '🔊';
     btnUS.onclick = (e) => {
         e.preventDefault();
         e.stopPropagation();
-        speakWord(word, 'en-US');
+        speakWord(word, 'US', btnUS);
     };
     
     // UK pronunciation button
     const btnUK = document.createElement('button');
     btnUK.className = 'btn-pronunciation btn-pronunciation-uk';
-    btnUK.title = 'Phát âm UK';
+    btnUK.title = 'Phát âm UK (Anh)';
     btnUK.innerHTML = showText ? '🔊 UK' : '🔊';
     btnUK.onclick = (e) => {
         e.preventDefault();
         e.stopPropagation();
-        speakWord(word, 'en-GB');
+        speakWord(word, 'UK', btnUK);
     };
     
     // Dictionary link button
@@ -215,36 +215,184 @@ function createPronunciationButton(word, showText = false) {
     return container;
 }
 
-// Speak word using Web Speech API
-function speakWord(word, voice = 'en-US') {
-    // Cancel any ongoing speech
-    if (window.speechSynthesis.speaking) {
-        window.speechSynthesis.cancel();
+// Audio cache for faster pronunciation
+const audioCache = new Map();
+let currentAudio = null;
+let currentSpeakingButton = null;
+
+// Speak word using multiple methods for best quality
+async function speakWord(word, accent = 'US', buttonElement = null) {
+    try {
+        // Add playing animation to button
+        if (buttonElement) {
+            if (currentSpeakingButton && currentSpeakingButton !== buttonElement) {
+                currentSpeakingButton.classList.remove('speaking');
+            }
+            buttonElement.classList.add('speaking');
+            currentSpeakingButton = buttonElement;
+        }
+        
+        // Stop any playing audio
+        if (currentAudio) {
+            currentAudio.pause();
+            currentAudio.currentTime = 0;
+        }
+        
+        // Stop any speech synthesis
+        if (window.speechSynthesis.speaking) {
+            window.speechSynthesis.cancel();
+        }
+        
+        // Try Google TTS first (better quality, clearer difference between accents)
+        const success = await playGoogleTTS(word, accent, buttonElement);
+        
+        if (!success) {
+            // Fallback to Web Speech API
+            playWebSpeech(word, accent, buttonElement);
+        }
+    } catch (error) {
+        console.error('Pronunciation error:', error);
+        // Fallback to Web Speech API
+        playWebSpeech(word, accent, buttonElement);
+    }
+}
+
+// Play pronunciation using Google TTS
+async function playGoogleTTS(word, accent, buttonElement) {
+    const cacheKey = `${word}-${accent}`;
+    
+    // Check cache first
+    if (audioCache.has(cacheKey)) {
+        const audio = audioCache.get(cacheKey);
+        audio.currentTime = 0;
+        
+        // Remove speaking class when done
+        audio.onended = () => {
+            if (buttonElement) {
+                buttonElement.classList.remove('speaking');
+            }
+        };
+        
+        audio.play();
+        currentAudio = audio;
+        return true;
     }
     
+    try {
+        // Google Translate TTS endpoint (free, no API key needed)
+        const langCode = accent === 'US' ? 'en-US' : 'en-GB';
+        const url = `https://translate.google.com/translate_tts?ie=UTF-8&tl=${langCode}&client=tw-ob&q=${encodeURIComponent(word)}`;
+        
+        const audio = new Audio();
+        
+        // Add to cache before loading
+        audioCache.set(cacheKey, audio);
+        
+        // Set up audio
+        audio.src = url;
+        audio.volume = 1.0;
+        
+        // Remove speaking class when done
+        audio.onended = () => {
+            if (buttonElement) {
+                buttonElement.classList.remove('speaking');
+            }
+        };
+        
+        // Play when ready
+        await new Promise((resolve, reject) => {
+            audio.onloadeddata = () => {
+                audio.play()
+                    .then(() => {
+                        currentAudio = audio;
+                        resolve(true);
+                    })
+                    .catch(reject);
+            };
+            audio.onerror = reject;
+            
+            // Timeout after 2 seconds
+            setTimeout(() => reject(new Error('Timeout')), 2000);
+        });
+        
+        return true;
+    } catch (error) {
+        // Remove from cache if failed
+        audioCache.delete(cacheKey);
+        if (buttonElement) {
+            buttonElement.classList.remove('speaking');
+        }
+        return false;
+    }
+}
+
+// Fallback: Web Speech API
+function playWebSpeech(word, accent, buttonElement) {
     const utterance = new SpeechSynthesisUtterance(word);
-    utterance.lang = voice;
-    utterance.rate = 0.8; // Slightly slower for learning
+    const langCode = accent === 'US' ? 'en-US' : 'en-GB';
+    utterance.lang = langCode;
+    utterance.rate = 0.85;
     utterance.pitch = 1;
     utterance.volume = 1;
     
-    // Try to find a native voice for the selected accent
-    const voices = window.speechSynthesis.getVoices();
-    const preferredVoice = voices.find(v => v.lang.startsWith(voice));
+    // Remove speaking class when done
+    utterance.onend = () => {
+        if (buttonElement) {
+            buttonElement.classList.remove('speaking');
+        }
+    };
     
-    if (preferredVoice) {
-        utterance.voice = preferredVoice;
+    // Try to find the best voice for the accent
+    const voices = window.speechSynthesis.getVoices();
+    
+    // Find native voice matching the accent
+    let selectedVoice = voices.find(v => 
+        v.lang === langCode && v.localService
+    );
+    
+    // If no native voice, try any voice with matching lang
+    if (!selectedVoice) {
+        selectedVoice = voices.find(v => v.lang.startsWith(langCode.split('-')[0]));
+    }
+    
+    if (selectedVoice) {
+        utterance.voice = selectedVoice;
     }
     
     window.speechSynthesis.speak(utterance);
 }
 
+// Preload common words for faster playback
+function preloadPronunciation(words) {
+    // Preload first 10 words to avoid too many requests
+    const wordsToPreload = words.slice(0, 10);
+    
+    wordsToPreload.forEach(async (word) => {
+        try {
+            const wordText = typeof word === 'string' ? word : word.english;
+            
+            // Preload both accents
+            ['US', 'UK'].forEach(async (accent) => {
+                const cacheKey = `${wordText}-${accent}`;
+                if (!audioCache.has(cacheKey)) {
+                    const langCode = accent === 'US' ? 'en-US' : 'en-GB';
+                    const url = `https://translate.google.com/translate_tts?ie=UTF-8&tl=${langCode}&client=tw-ob&q=${encodeURIComponent(wordText)}`;
+                    
+                    const audio = new Audio();
+                    audio.src = url;
+                    audio.preload = 'auto';
+                    audioCache.set(cacheKey, audio);
+                }
+            });
+        } catch (error) {
+            // Ignore preload errors
+        }
+    });
+}
+
 // Load voices when available
 if (window.speechSynthesis) {
-    // Load voices
     window.speechSynthesis.getVoices();
-    
-    // Some browsers need this event
     window.speechSynthesis.onvoiceschanged = () => {
         window.speechSynthesis.getVoices();
     };
@@ -431,6 +579,9 @@ function loadVocabulary() {
             const item = createVocabItem(vocab, index);
             vocabList.appendChild(item);
         });
+        
+        // Preload pronunciations for faster playback
+        preloadPronunciation(day.vocabulary);
     }
 }
 
@@ -653,6 +804,11 @@ function startTypingTest(testType) {
     // Update title
     const title = testType === 1 ? 'Test 1: Việt → Anh' : 'Test 2: Anh → Việt';
     document.getElementById('typingTestTitle').textContent = title;
+    
+    // Preload pronunciations for test 2
+    if (testType === 2) {
+        preloadPronunciation(typingTestWords);
+    }
     
     showView('testTypingView');
     loadTypingQuestion();
@@ -968,10 +1124,10 @@ function loadMatchingRound() {
         wordDiv.dataset.index = index;
         wordDiv.style.animationDelay = `${index * 0.1}s`;
         
-        const wordText = document.createElement('span');
-        wordText.textContent = word.english;
-        wordText.style.flex = '1';
-        wordDiv.appendChild(wordText);
+        const wordContent = document.createElement('div');
+        wordContent.className = 'word-content';
+        wordContent.textContent = word.english;
+        wordDiv.appendChild(wordContent);
         
         const pronContainer = createPronunciationButton(word.english);
         wordDiv.appendChild(pronContainer);
@@ -992,11 +1148,16 @@ function loadMatchingRound() {
     const shuffledVietnamese = [...roundWords].sort(() => Math.random() - 0.5);
     shuffledVietnamese.forEach((word, index) => {
         const wordDiv = document.createElement('div');
-        wordDiv.className = 'matching-word';
-        wordDiv.textContent = word.vietnamese;
+        wordDiv.className = 'matching-word matching-word-vietnamese';
         wordDiv.dataset.id = word.id;
         wordDiv.dataset.index = index;
         wordDiv.style.animationDelay = `${index * 0.1}s`;
+        
+        const wordContent = document.createElement('div');
+        wordContent.className = 'word-content';
+        wordContent.textContent = word.vietnamese;
+        wordDiv.appendChild(wordContent);
+        
         wordDiv.addEventListener('click', () => selectVietnameseWord(word, wordDiv));
         vietnameseContainer.appendChild(wordDiv);
     });
