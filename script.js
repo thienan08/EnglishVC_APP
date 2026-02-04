@@ -173,15 +173,81 @@ function getCambridgeLink(word) {
 }
 
 // Create pronunciation button
-function createPronunciationButton(word) {
-    const btn = document.createElement('a');
-    btn.href = getCambridgeLink(word);
-    btn.target = '_blank';
-    btn.className = 'btn-pronunciation';
-    btn.title = 'Nghe phát âm trên Cambridge';
-    btn.innerHTML = '🔊';
-    btn.onclick = (e) => e.stopPropagation();
-    return btn;
+function createPronunciationButton(word, showText = false) {
+    const container = document.createElement('span');
+    container.className = 'pronunciation-container';
+    
+    // US pronunciation button
+    const btnUS = document.createElement('button');
+    btnUS.className = 'btn-pronunciation btn-pronunciation-us';
+    btnUS.title = 'Phát âm US';
+    btnUS.innerHTML = showText ? '🔊 US' : '🔊';
+    btnUS.onclick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        speakWord(word, 'en-US');
+    };
+    
+    // UK pronunciation button
+    const btnUK = document.createElement('button');
+    btnUK.className = 'btn-pronunciation btn-pronunciation-uk';
+    btnUK.title = 'Phát âm UK';
+    btnUK.innerHTML = showText ? '🔊 UK' : '🔊';
+    btnUK.onclick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        speakWord(word, 'en-GB');
+    };
+    
+    // Dictionary link button
+    const btnDict = document.createElement('a');
+    btnDict.href = getCambridgeLink(word);
+    btnDict.target = '_blank';
+    btnDict.className = 'btn-pronunciation btn-pronunciation-dict';
+    btnDict.title = 'Xem từ điển Cambridge';
+    btnDict.innerHTML = '📖';
+    btnDict.onclick = (e) => e.stopPropagation();
+    
+    container.appendChild(btnUS);
+    container.appendChild(btnUK);
+    container.appendChild(btnDict);
+    
+    return container;
+}
+
+// Speak word using Web Speech API
+function speakWord(word, voice = 'en-US') {
+    // Cancel any ongoing speech
+    if (window.speechSynthesis.speaking) {
+        window.speechSynthesis.cancel();
+    }
+    
+    const utterance = new SpeechSynthesisUtterance(word);
+    utterance.lang = voice;
+    utterance.rate = 0.8; // Slightly slower for learning
+    utterance.pitch = 1;
+    utterance.volume = 1;
+    
+    // Try to find a native voice for the selected accent
+    const voices = window.speechSynthesis.getVoices();
+    const preferredVoice = voices.find(v => v.lang.startsWith(voice));
+    
+    if (preferredVoice) {
+        utterance.voice = preferredVoice;
+    }
+    
+    window.speechSynthesis.speak(utterance);
+}
+
+// Load voices when available
+if (window.speechSynthesis) {
+    // Load voices
+    window.speechSynthesis.getVoices();
+    
+    // Some browsers need this event
+    window.speechSynthesis.onvoiceschanged = () => {
+        window.speechSynthesis.getVoices();
+    };
 }
 
 // Load days
@@ -623,9 +689,7 @@ function loadTypingQuestion() {
         // Add pronunciation button for Test 2 (showing English word)
         const pronContainer = document.createElement('div');
         pronContainer.className = 'pronunciation-btn-container';
-        const pronBtn = createPronunciationButton(word.english);
-        pronBtn.innerHTML = '🔊 Nghe phát âm';
-        pronContainer.appendChild(pronBtn);
+        pronContainer.appendChild(createPronunciationButton(word.english, true));
         questionContainer.appendChild(pronContainer);
     }
     
@@ -909,11 +973,12 @@ function loadMatchingRound() {
         wordText.style.flex = '1';
         wordDiv.appendChild(wordText);
         
-        const pronBtn = createPronunciationButton(word.english);
-        wordDiv.appendChild(pronBtn);
+        const pronContainer = createPronunciationButton(word.english);
+        wordDiv.appendChild(pronContainer);
         
         wordDiv.addEventListener('click', (e) => {
-            if (!e.target.classList.contains('btn-pronunciation')) {
+            // Don't select if clicking on pronunciation buttons
+            if (!e.target.closest('.pronunciation-container')) {
                 selectEnglishWord(word, wordDiv);
             }
         });
