@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Học Tiếng Anh - Vocabulary Learning</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <span class="logo-icon">📚</span>
+                <h1>VocabMaster</h1>
+            </div>
+            <div class="header-actions">
+                <button id="themeToggle" class="btn-icon" title="Đổi chế độ">
+                    <span class="theme-icon">🌙</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- View: Danh sách ngày -->
+            <section id="dayListView" class="view active">
+                <div class="section-header">
+                    <h2 class="section-title">Học Theo Ngày</h2>
+                    <button id="addDayBtn" class="btn btn-primary">
+                        <span>+ Thêm Ngày Mới</span>
+                    </button>
+                </div>
+                
+                <div id="daysList" class="days-grid">
+                    <!-- Days will be inserted here -->
+                </div>
+
+                <div id="emptyState" class="empty-state">
+                    <div class="empty-icon">📝</div>
+                    <h3>Chưa có ngày học nào</h3>
+                    <p>Nhấn "Thêm Ngày Mới" để bắt đầu thêm từ vựng</p>
+                </div>
+            </section>
+
+            <!-- View: Quản lý từ vựng -->
+            <section id="vocabManageView" class="view">
+                <div class="section-header">
+                    <button id="backToList" class="btn btn-secondary">
+                        <span>← Quay lại</span>
+                    </button>
+                    <h2 id="currentDayTitle" class="section-title">Ngày 1</h2>
+                    <button id="startTestBtn" class="btn btn-primary">
+                        <span>🎯 Bắt Đầu 3 Test</span>
+                    </button>
+                </div>
+
+                <div class="vocab-input-section">
+                    <div class="input-group">
+                        <input type="text" id="englishInput" placeholder="Tiếng Anh" class="input-field">
+                        <input type="text" id="vietnameseInput" placeholder="Tiếng Việt" class="input-field">
+                        <button id="addVocabBtn" class="btn btn-add">Thêm</button>
+                    </div>
+                </div>
+
+                <div id="vocabList" class="vocab-list">
+                    <!-- Vocabulary items will be inserted here -->
+                </div>
+
+                <div id="vocabEmptyState" class="empty-state">
+                    <div class="empty-icon">💬</div>
+                    <h3>Chưa có từ vựng nào</h3>
+                    <p>Thêm từ vựng để bắt đầu học</p>
+                </div>
+            </section>
+
+            <!-- View: Test Selection -->
+            <section id="testSelectionView" class="view">
+                <div class="test-selection-container">
+                    <div class="section-header">
+                        <button id="backFromSelection" class="btn btn-secondary">
+                            <span>← Quay lại</span>
+                        </button>
+                        <h2 class="section-title">Chọn Loại Test</h2>
+                    </div>
+
+                    <div class="test-types-grid">
+                        <div class="test-type-card" data-type="1">
+                            <div class="test-type-icon">🇻🇳 → 🇬🇧</div>
+                            <h3>Test 1</h3>
+                            <p>Xem tiếng Việt - Gõ tiếng Anh</p>
+                            <div class="test-type-badge">Typing</div>
+                        </div>
+                        <div class="test-type-card" data-type="2">
+                            <div class="test-type-icon">🇬🇧 → 🇻🇳</div>
+                            <h3>Test 2</h3>
+                            <p>Xem tiếng Anh - Gõ tiếng Việt</p>
+                            <div class="test-type-badge">Typing</div>
+                        </div>
+                        <div class="test-type-card" data-type="3">
+                            <div class="test-type-icon">🔗</div>
+                            <h3>Test 3</h3>
+                            <p>Nối các từ với nghĩa (5 từ/lượt)</p>
+                            <div class="test-type-badge">Matching</div>
+                        </div>
+                    </div>
+
+                    <div class="test-selection-info">
+                        <p>💡 Hoàn thành cả 3 test để xem kết quả tổng hợp!</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- View: Test Type 1 & 2 (Typing) -->
+            <section id="testTypingView" class="view">
+                <div class="test-container">
+                    <div class="test-header">
+                        <button id="exitTypingTest" class="btn btn-secondary">
+                            <span>← Thoát</span>
+                        </button>
+                        <div class="test-type-title" id="typingTestTitle">Test 1</div>
+                        <div class="test-progress">
+                            <span id="currentTypingQuestion">1</span> / <span id="totalTypingQuestions">0</span>
+                        </div>
+                    </div>
+
+                    <div class="test-card">
+                        <div class="test-question">
+                            <p class="test-word" id="typingTestWord"></p>
+                        </div>
+
+                        <div class="test-input-section">
+                            <input 
+                                type="text" 
+                                id="typingAnswerInput" 
+                                placeholder="Gõ câu trả lời..." 
+                                class="test-input"
+                                autocomplete="off"
+                            >
+                            <div id="typingFeedbackMessage" class="feedback-message"></div>
+                        </div>
+
+                        <div class="test-actions">
+                            <button id="showTypingAnswerBtn" class="btn btn-show">Xem Đáp Án</button>
+                            <button id="nextTypingWordBtn" class="btn btn-next" disabled>Từ Tiếp Theo</button>
+                        </div>
+
+                        <div id="typingAnswerDisplay" class="answer-display"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- View: Test Type 3 (Matching) -->
+            <section id="testMatchingView" class="view">
+                <div class="test-container">
+                    <div class="test-header">
+                        <button id="exitMatchingTest" class="btn btn-secondary">
+                            <span>← Thoát</span>
+                        </button>
+                        <div class="test-type-title">Test 3 - Nối Từ</div>
+                        <div class="test-progress">
+                            <span id="currentMatchingRound">1</span> / <span id="totalMatchingRounds">5</span>
+                        </div>
+                    </div>
+
+                    <div class="matching-card">
+                        <div class="matching-instruction">
+                            <p>Nhấn vào từ tiếng Anh, sau đó nhấn vào nghĩa tiếng Việt tương ứng</p>
+                        </div>
+
+                        <div class="matching-container">
+                            <div class="matching-column">
+                                <h4>🇬🇧 Tiếng Anh</h4>
+                                <div id="englishWords" class="matching-words">
+                                    <!-- English words will be inserted here -->
+                                </div>
+                            </div>
+
+                            <div class="matching-column">
+                                <h4>🇻🇳 Tiếng Việt</h4>
+                                <div id="vietnameseWords" class="matching-words">
+                                    <!-- Vietnamese words will be inserted here -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="matching-feedback" id="matchingFeedback"></div>
+
+                        <div class="matching-actions">
+                            <button id="nextMatchingRound" class="btn btn-next" disabled>Vòng Tiếp Theo</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- View: Kết quả -->
+            <section id="resultView" class="view">
+                <div class="result-container">
+                    <div class="result-header">
+                        <h2>🎉 Hoàn Thành Cả 3 Test!</h2>
+                    </div>
+
+                    <div class="result-stats">
+                        <div class="stat-card stat-correct">
+                            <div class="stat-icon">✓</div>
+                            <div class="stat-value" id="correctCount">0</div>
+                            <div class="stat-label">Đúng</div>
+                        </div>
+                        <div class="stat-card stat-wrong">
+                            <div class="stat-icon">✗</div>
+                            <div class="stat-value" id="wrongCount">0</div>
+                            <div class="stat-label">Sai</div>
+                        </div>
+                        <div class="stat-card stat-percent">
+                            <div class="stat-icon">%</div>
+                            <div class="stat-value" id="percentCorrect">0</div>
+                            <div class="stat-label">Chính xác</div>
+                        </div>
+                    </div>
+
+                    <div class="test-breakdown">
+                        <h3>📊 Chi Tiết Từng Test:</h3>
+                        <div class="breakdown-grid">
+                            <div class="breakdown-card">
+                                <div class="breakdown-header">
+                                    <span class="breakdown-icon">🇻🇳 → 🇬🇧</span>
+                                    <h4>Test 1</h4>
+                                </div>
+                                <div class="breakdown-stats">
+                                    <span class="stat-item correct">✓ <span id="test1Correct">0</span></span>
+                                    <span class="stat-item wrong">✗ <span id="test1Wrong">0</span></span>
+                                </div>
+                            </div>
+                            <div class="breakdown-card">
+                                <div class="breakdown-header">
+                                    <span class="breakdown-icon">🇬🇧 → 🇻🇳</span>
+                                    <h4>Test 2</h4>
+                                </div>
+                                <div class="breakdown-stats">
+                                    <span class="stat-item correct">✓ <span id="test2Correct">0</span></span>
+                                    <span class="stat-item wrong">✗ <span id="test2Wrong">0</span></span>
+                                </div>
+                            </div>
+                            <div class="breakdown-card">
+                                <div class="breakdown-header">
+                                    <span class="breakdown-icon">🔗</span>
+                                    <h4>Test 3</h4>
+                                </div>
+                                <div class="breakdown-stats">
+                                    <span class="stat-item correct">✓ <span id="test3Correct">0</span></span>
+                                    <span class="stat-item wrong">✗ <span id="test3Wrong">0</span></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="wrongWordsList" class="wrong-words-section">
+                        <h3>📚 Từ Cần Học Lại:</h3>
+                        <div id="wrongWordsContainer" class="wrong-words-list">
+                            <!-- Wrong words will be inserted here -->
+                        </div>
+                    </div>
+
+                    <div class="result-actions">
+                        <button id="retryTestBtn" class="btn btn-primary">Làm Lại 3 Test</button>
+                        <button id="backToVocabBtn" class="btn btn-secondary">Về Danh Sách</button>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Modal: Thêm ngày mới -->
+    <div id="addDayModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Thêm Ngày Học Mới</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="text" id="dayNameInput" placeholder="Tên ngày (ví dụ: Ngày 1, Week 1...)" class="input-field">
+            </div>
+            <div class="modal-footer">
+                <button id="cancelDayBtn" class="btn btn-secondary">Hủy</button>
+                <button id="confirmDayBtn" class="btn btn-primary">Thêm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Chỉnh sửa tên ngày -->
+    <div id="editDayModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Chỉnh Sửa Tên Ngày</h3>
+                <button class="modal-close-edit-day">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="text" id="editDayNameInput" placeholder="Tên ngày mới" class="input-field">
+            </div>
+            <div class="modal-footer">
+                <button id="cancelEditDayBtn" class="btn btn-secondary">Hủy</button>
+                <button id="confirmEditDayBtn" class="btn btn-primary">Lưu</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Chỉnh sửa từ vựng -->
+    <div id="editVocabModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Chỉnh Sửa Từ Vựng</h3>
+                <button class="modal-close-edit-vocab">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="text" id="editEnglishInput" placeholder="Tiếng Anh" class="input-field" style="margin-bottom: var(--spacing-md);">
+                <input type="text" id="editVietnameseInput" placeholder="Tiếng Việt" class="input-field">
+            </div>
+            <div class="modal-footer">
+                <button id="cancelEditVocabBtn" class="btn btn-secondary">Hủy</button>
+                <button id="confirmEditVocabBtn" class="btn btn-primary">Lưu</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
